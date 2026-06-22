@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One Max VPN</title>
+  <style>
+    :root {
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --border:      #30363d;
+      --accent:      #58a6ff;
+      --accent-glow: #58a6ff33;
+      --green:       #3fb950;
+      --red:         #f85149;
+      --text:        #e6edf3;
+      --muted:       #8b949e;
+      --radius:      12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 340px;
+      min-height: 480px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      font-size: 13px;
+    }
+
+    /* ── Шапка ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 20px; }
+    .header h1 { font-size: 15px; font-weight: 600; }
+    .header .version { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+    /* ── Кнопка VPN ── */
+    .vpn-toggle-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 16px;
+      gap: 10px;
+    }
+
+    .vpn-btn {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      outline: none;
+    }
+    .vpn-btn:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+    .vpn-btn.on {
+      border-color: var(--green);
+      box-shadow: 0 0 24px #3fb95044;
+      background: #3fb95011;
+    }
+    .vpn-btn.off { border-color: var(--red); }
+
+    .vpn-btn .icon { font-size: 28px; line-height: 1; }
+    .vpn-btn .label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--muted); }
+    .vpn-btn.on  .label { color: var(--green); }
+    .vpn-btn.off .label { color: var(--red); }
+
+    .status-text { font-size: 12px; color: var(--muted); }
+    .status-text .dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .status-text.connected .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-text.disconnected .dot { background: var(--red); }
+
+    /* ── Сервер ── */
+    .server-card {
+      margin: 0 16px 12px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .server-info { flex: 1; }
+    .server-host { font-weight: 600; font-size: 12px; }
+    .server-port { font-size: 11px; color: var(--muted); }
+    .server-flag { font-size: 20px; }
+    .btn-switch {
+      padding: 5px 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-switch:hover { background: var(--accent-glow); }
+
+    /* ── Статистика ── */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 0 16px 12px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+    }
+    .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-value { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .stat-unit  { font-size: 10px; color: var(--muted); }
+
+    /* ── Фичи-тоглы ── */
+    .features {
+      margin: 0 16px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .feature-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .feature-row:last-child { border-bottom: none; }
+    .feature-icon { font-size: 16px; width: 22px; text-align: center; }
+    .feature-label { flex: 1; font-size: 12px; }
+    .feature-desc  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+    /* Кастомный toggle */
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--green); }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
+
+    /* ── Футер ── */
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .footer-link {
+      font-size: 11px;
+      color: var(--muted);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .footer-link:hover { color: var(--accent); }
+
+    /* ── Лоадер ── */
+    .loader {
+      display: none;
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-left: auto;
+    }
+    .loader.active { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- Шапка -->
+  <div class="header">
+    <div class="logo">🛡️</div>
+    <h1>One Max VPN</h1>
+    <span class="version" id="version">v1.0.0</span>
+    <div class="loader" id="loader"></div>
+  </div>
+
+  <!-- Кнопка включения -->
+  <div class="vpn-toggle-wrap">
+    <button class="vpn-btn off" id="vpnBtn" title="Нажмите для включения/выключения VPN">
+      <span class="icon" id="vpnIcon">🔒</span>
+      <span class="label" id="vpnLabel">ВЫКЛ</span>
+    </button>
+    <div class="status-text disconnected" id="statusText">
+      <span class="dot"></span>
+      <span id="statusLabel">Не подключено</span>
+    </div>
+  </div>
+
+  <!-- Текущий сервер -->
+  <div class="server-card">
+    <div class="server-flag" id="serverFlag">🌐</div>
+    <div class="server-info">
+      <div class="server-host" id="serverHost">—</div>
+      <div class="server-port" id="serverPort">Нет сервера</div>
+    </div>
+    <button class="btn-switch" id="btnSwitch">Сменить</button>
+  </div>
+
+  <!-- Статистика -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Сэкономлено</div>
+      <div class="stat-value" id="savedBytes">0</div>
+      <div class="stat-unit" id="savedUnit">КБ</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Блокировок</div>
+      <div class="stat-value" id="blockedReqs">0</div>
+      <div class="stat-unit">трекеров</div>
+    </div>
+  </div>
+
+  <!-- Фичи -->
+  <div class="features">
+    <div class="feature-row">
+      <div class="feature-icon">🚫</div>
+      <div style="flex:1">
+        <div class="feature-label">Блокировка трекеров</div>
+        <div class="feature-desc">Аналитика, реклама, счётчики</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggleTrackers" checked>
+        <div class="toggle-slider"></div>
+      </label>
+    </div>
+    <div class="feature-row">
+      <div class="feature-icon">🕵️</div>
+      <div style="flex:1">
+        <div class="feature-label">Очистка при отключении</div>
+        <div class="feature-desc">Куки и кеш после выхода</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="toggleIncognito">
+        <div class="toggle-slider"></div>
+      </label>
+    </div>
+  </div>
+
+  <!-- Футер -->
+  <div class="footer">
+    <a class="footer-link" href="https://one-max-vpn.vercel.app" target="_blank">🌐 Сайт</a>
+    <a class="footer-link" id="btnRefresh">🔄 Обновить серверы</a>
+    <a class="footer-link" href="https://t.me/OneMaxVPNBot" target="_blank">💬 Бот</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
