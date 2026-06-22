@@ -1,0 +1,217 @@
+name: 🛡️ One Max VPN — Build & Release
+
+on:
+  # При пуше в main (если изменился манифест или код расширения)
+  push:
+    branches: [main]
+    paths:
+      - 'extension/**'
+      - 'landing/**'
+  # Ежедневное обновление серверов в 00:00 UTC
+  schedule:
+    - cron: '0 0 * * *'
+  # Ручной запуск
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Создать GitHub Release?'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+
+  # ─── Job 1: Сборка расширения ───────────────────────────────────────────────
+  build-extension:
+    name: 📦 Build Extension
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Получить версию из manifest.json
+        id: get_version
+        run: |
+          VERSION=$(jq -r '.version' extension/manifest.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📌 Версия: $VERSION"
+
+      - name: Валидация manifest.json
+        run: |
+          echo "🔍 Проверяем manifest.json..."
+          python3 -c "
+          import json, sys
+          with open('extension/manifest.json') as f:
+              m = json.load(f)
+          assert m.get('manifest_version') == 3, 'Нужен Manifest V3'
+          assert 'name' in m, 'Нет поля name'
+          assert 'version' in m, 'Нет поля version'
+          print('✅ manifest.json валиден')
+          "
+
+      - name: Создать ZIP-архив расширения
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          ZIP_NAME="one-max-vpn-v${VERSION}.zip"
+          cd extension
+          zip -r "../${ZIP_NAME}" . --exclude "*.DS_Store" --exclude "__MACOSX"
+          echo "✅ ZIP создан: ${ZIP_NAME}"
+          echo "📊 Размер: $(du -sh ../${ZIP_NAME} | cut -f1)"
+
+      - name: Загрузить артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: one-max-vpn-v${{ steps.get_version.outputs.version }}.zip
+          retention-days: 30
+
+  # ─── Job 2: Обновление update.json ─────────────────────────────────────────
+  update-json:
+    name: 🔄 Update update.json
+    runs-on: ubuntu-latest
+    needs: build-extension
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Обновить update.json с актуальной версией
+        run: |
+          VERSION=${{ needs.build-extension.outputs.version }}
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/latest/download/one-max-vpn-v${VERSION}.zip"
+
+          cat > landing/update.json << EOF
+          {
+            "addons": {
+              "one-max-vpn@oinktech.ltd": {
+                "updates": [
+                  {
+                    "version": "${VERSION}",
+                    "update_link": "${DOWNLOAD_URL}"
+                  }
+                ]
+              }
+            }
+          }
+          EOF
+          echo "✅ update.json обновлён → версия ${VERSION}"
+
+      - name: Обновить servers.json (актуальный пул)
+        run: |
+          # Получаем свежие прокси из публичного API
+          SERVERS=$(curl -sf \
+            "https://proxylist.geonode.com/api/proxy-list?limit=20&page=1&sort_by=lastChecked&sort_type=desc&protocols=http&speed=fast" \
+            | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          servers = []
+          for item in data.get('data', [])[:20]:
+              servers.append({
+                  'host': item['ip'],
+                  'port': int(item['port']),
+                  'username': '',
+                  'password': '',
+                  'protocol': 'HTTP Proxy',
+                  'country': item.get('country', '')
+              })
+          print(json.dumps(servers, indent=2))
+          " 2>/dev/null) || SERVERS='[]'
+
+          # Если пустой список — используем резервный
+          COUNT=$(echo "$SERVERS" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d))")
+          if [ "$COUNT" -lt 3 ]; then
+            echo "⚠️ Мало серверов ($COUNT), используем резервный пул"
+            SERVERS='[
+              {"host":"185.220.101.1","port":8080,"username":"","password":"","protocol":"HTTP Proxy"},
+              {"host":"185.220.101.2","port":8080,"username":"","password":"","protocol":"HTTP Proxy"},
+              {"host":"45.142.212.100","port":3128,"username":"","password":"","protocol":"HTTP Proxy"}
+            ]'
+            COUNT=3
+          fi
+
+          echo "$SERVERS" > landing/servers.json
+          echo "✅ servers.json обновлён — серверов: $COUNT"
+
+      - name: Коммит обновлённых файлов
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add landing/update.json landing/servers.json
+          git diff --staged --quiet || git commit -m "🤖 Авто: обновление серверов и update.json [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Job 3: GitHub Release ──────────────────────────────────────────────────
+  release:
+    name: 🚀 Create Release
+    runs-on: ubuntu-latest
+    needs: [build-extension, update-json]
+    if: github.event_name == 'push' || github.event.inputs.create_release == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Скачать артефакт
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-zip
+
+      - name: Создать GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build-extension.outputs.version }}
+          name: "🛡️ One Max VPN v${{ needs.build-extension.outputs.version }}"
+          body: |
+            ## 🛡️ One Max VPN v${{ needs.build-extension.outputs.version }}
+
+            ### 📥 Установка
+            1. Скачай ZIP ниже
+            2. Распакуй архив
+            3. Открой `chrome://extensions`
+            4. Включи «Режим разработчика»
+            5. Нажми «Загрузить распакованное» → выбери папку `extension/`
+
+            ### ✨ Что нового
+            - Автообновление серверов каждые 24 часа
+            - Блокировка 25+ трекеров
+            - Статистика сэкономленного трафика
+
+            ### 🤖 Telegram-бот
+            [@OneMaxVPNBot](https://t.me/OneMaxVPNBot) — управление серверами
+          files: |
+            one-max-vpn-v${{ needs.build-extension.outputs.version }}.zip
+          fail_on_unmatched_files: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Job 4: Деплой лендинга на Vercel ──────────────────────────────────────
+  deploy-landing:
+    name: 🌐 Deploy Landing
+    runs-on: ubuntu-latest
+    needs: update-json
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Установить Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Деплой на Vercel
+        run: |
+          cd landing
+          vercel --prod --token=${{ secrets.VERCEL_TOKEN }} \
+            --scope=${{ secrets.VERCEL_ORG_ID }} \
+            --yes
+        env:
+          VERCEL_TOKEN:  ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        continue-on-error: true  # Деплой не ломает весь pipeline
