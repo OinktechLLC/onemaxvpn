@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { width: 320px; font-family: Arial, sans-serif; margin: 0; padding: 16px; background: #f8f9fa; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .connect-btn {
+      display: block; margin: 20px auto; padding: 14px 40px; font-size: 18px; border-radius: 50px;
+      background: #34c759; color: white; border: none; cursor: pointer;
+    }
+    .toggle { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; margin: 8px 0; border-radius: 12px; }
+    .rate { color: #007aff; text-align: right; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>One Max VPN</h1>
+    <p>Privacy VPN and data saver</p>
+  </div>
+
+  <button id="connectBtn" class="connect-btn">Connect</button>
+
+  <div class="toggle">
+    <span>Wi-Fi data saving mode</span>
+    <label class="switch"><input type="checkbox" id="dataSave"><span class="slider"></span></label>
+  </div>
+
+  <div class="toggle">
+    <span>Privacy protection</span>
+    <label class="switch"><input type="checkbox" id="privacy"><span class="slider"></span></label>
+  </div>
+
+  <div style="text-align:center; margin:20px 0;">
+    <p>Like One Max?</p>
+    <button onclick="alert('Спасибо! Оцените в Chrome Web Store ❤️')">Rate</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

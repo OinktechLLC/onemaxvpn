@@ -1,0 +1,3 @@
+body { font-family: system-ui; margin: 0; padding: 20px; background: #f0f2f5; }
+h1 { color: #34c759; }
+.btn { background: #34c759; color: white; padding: 15px 30px; border-radius: 50px; text-decoration: none; }
