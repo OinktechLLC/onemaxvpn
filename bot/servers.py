@@ -1,43 +1,34 @@
 import requests
 import json
-import os
-from bs4 import BeautifulSoup
 from datetime import datetime
 
-def fetch_free_proxies():
-    """Production: Парсит рабочие прокси из публичных источников"""
+# Production серверный робот
+def fetch_proxies():
     proxies = []
     sources = [
-        "https://www.free-proxy-list.net/",
-        "https://www.sslproxies.org/"
+        "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
+        "https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt"
     ]
     
     for url in sources:
         try:
-            resp = requests.get(url, timeout=10)
-            soup = BeautifulSoup(resp.text, 'html.parser')
-            rows = soup.select('table tr')
-            
-            for row in rows[1:30]:  # top 30
-                cols = row.find_all('td')
-                if len(cols) > 6:
-                    ip = cols[0].text.strip()
-                    port = cols[1].text.strip()
-                    if ip and port:
-                        proxies.append({"host": ip, "port": int(port), "type": "http"})
-        except Exception as e:
-            print(f"Error fetching {url}: {e}")
+            r = requests.get(url, timeout=10)
+            if r.status_code == 200:
+                for line in r.text.splitlines():
+                    if line.strip() and ':' in line:
+                        proxies.append(line.strip())
+        except:
+            continue
     
-    # Фильтруем и сохраняем
-    unique_proxies = proxies[:15]  # limit
+    # Сохраняем
     with open('/home/workdir/one-max-vpn/landing/servers.json', 'w') as f:
         json.dump({
-            "last_updated": datetime.utcnow().isoformat(),
-            "servers": unique_proxies
+            "last_update": datetime.utcnow().isoformat(),
+            "servers": proxies[:50]  # Топ 50
         }, f, indent=2)
     
-    print(f"✅ Updated {len(unique_proxies)} live proxies")
-    return unique_proxies
+    print(f"✅ Обновлено {len(proxies)} прокси")
+    return proxies
 
 if __name__ == "__main__":
-    fetch_free_proxies()
+    fetch_proxies()

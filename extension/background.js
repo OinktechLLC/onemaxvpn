@@ -1,58 +1,40 @@
-// Service Worker для One Max VPN
-// Управление прокси и блокировкой трекеров
-
-let currentProxy = null;
+// Service Worker - управление VPN и прокси
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('One Max VPN установлен');
-  loadProxySettings();
+  chrome.storage.local.set({ vpnEnabled: false });
 });
 
-async function loadProxySettings() {
-  const result = await chrome.storage.local.get(['vpnEnabled', 'currentServer']);
-  if (result.vpnEnabled) {
-    enableProxy(result.currentServer || 'default');
-  }
-}
-
-function enableProxy(server) {
-  currentProxy = {
-    scheme: "http",
-    host: server.host || "proxy.example.com",
-    port: server.port || 8080
-  };
-
-  chrome.proxy.settings.set({
-    value: {
-      mode: "fixed_servers",
-      rules: {
-        singleProxy: currentProxy
-      }
-    },
-    scope: 'regular'
-  }, () => {
-    console.log('VPN включён для сервера:', server);
-  });
-}
-
-function disableProxy() {
-  chrome.proxy.settings.set({
-    value: { mode: "direct" },
-    scope: 'regular'
-  });
-  currentProxy = null;
-  console.log('VPN выключен');
-}
-
-// Слушаем сообщения от popup
+// Включение/выключение VPN
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'toggleVPN') {
-    if (message.enabled) {
-      enableProxy(message.server);
+    const enabled = message.enabled;
+    
+    if (enabled) {
+      // Получаем текущий сервер
+      chrome.storage.local.get(['currentServer'], (data) => {
+        const config = {
+          mode: "fixed_servers",
+          rules: {
+            singleProxy: {
+              scheme: "http",
+              host: data.currentServer ? data.currentServer.host : "proxy.example.com",
+              port: data.currentServer ? data.currentServer.port : 8080
+            }
+          }
+        };
+        chrome.proxy.settings.set({ value: config, scope: 'regular' });
+      });
     } else {
-      disableProxy();
+      chrome.proxy.settings.set({ value: { mode: "direct" }, scope: 'regular' });
     }
-    chrome.storage.local.set({ vpnEnabled: message.enabled });
+    
+    chrome.storage.local.set({ vpnEnabled: enabled });
     sendResponse({ success: true });
   }
+});
+
+// Блокировка трекеров
+chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((info) => {
+  console.log('Blocked:', info);
 });

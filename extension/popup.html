@@ -1,38 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <style>
-    body { width: 320px; font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
-    .header { padding: 20px; text-align: center; background: white; }
-    .logo { font-size: 24px; font-weight: bold; }
+    body { width: 360px; font-family: Arial, sans-serif; margin: 0; padding: 16px; background: #f5f5f5; }
+    .header { text-align: center; margin-bottom: 20px; }
     .connect-btn {
-      display: block; margin: 20px auto; padding: 12px 40px; background: #34c759; color: white; border: none; border-radius: 30px; font-size: 16px; cursor: pointer;
+      background: #4CAF50; color: white; border: none; padding: 14px 40px;
+      font-size: 18px; border-radius: 30px; cursor: pointer; width: 100%;
+      margin: 10px 0;
     }
-    .toggle { display: flex; justify-content: space-between; padding: 15px 20px; background: white; margin: 8px; border-radius: 12px; align-items: center; }
-    .rate { color: #007aff; }
+    .toggle { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; margin: 8px 0; border-radius: 8px; }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">One Max <span style="color:#34c759">VPN</span></div>
+    <h2>SAMSUNG <strong>Max</strong> VPN</h2>
     <p>Privacy VPN and data saver</p>
-    <button id="connectBtn" class="connect-btn">Connect</button>
+  </div>
+
+  <button class="connect-btn" id="connectBtn">Connect</button>
+
+  <div class="toggle">
+    <span>Wi-Fi data saving mode</span>
+    <label class="switch"><input type="checkbox" id="dataSave"><span class="slider"></span></label>
   </div>
 
   <div class="toggle">
-    <div>Wi-Fi data saving mode</div>
-    <label class="switch"><input type="checkbox" id="dataSave"><span></span></label>
-  </div>
-
-  <div class="toggle">
-    <div>Privacy protection</div>
-    <label class="switch"><input type="checkbox" id="privacy"><span></span></label>
-  </div>
-
-  <div style="padding: 15px; text-align: center;">
-    <p>Like One Max?</p>
-    <button class="rate">Rate</button>
+    <span>Privacy protection</span>
+    <label class="switch"><input type="checkbox" id="privacy"><span class="slider"></span></label>
   </div>
 
   <script src="popup.js"></script>
