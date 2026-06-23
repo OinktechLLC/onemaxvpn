@@ -17,10 +17,10 @@
   },
   "permissions": [
     "proxy",
-    "storage",
-    "webRequest",
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess"
+    "declarativeNetRequestFeedback",
+    "storage",
+    "webRequest"
   ],
   "host_permissions": [
     "<all_urls>"

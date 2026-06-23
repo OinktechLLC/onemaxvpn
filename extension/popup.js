@@ -1,8 +1,14 @@
-// Popup logic - Samsung Max style
+// Popup logic
+let vpnEnabled = false;
+
 document.getElementById('connectBtn').addEventListener('click', () => {
-  chrome.runtime.sendMessage({ action: 'toggleVPN', enabled: true }, (response) => {
-    alert('VPN подключён! Сервер обновлён автоматически.');
+  vpnEnabled = !vpnEnabled;
+  const btn = document.getElementById('connectBtn');
+  btn.textContent = vpnEnabled ? 'Disconnect' : 'Connect';
+  btn.style.background = vpnEnabled ? '#f44336' : '#4CAF50';
+  
+  chrome.runtime.sendMessage({ 
+    action: 'toggleVPN', 
+    enabled: vpnEnabled 
   });
 });
-
-console.log('One Max VPN Popup loaded');
