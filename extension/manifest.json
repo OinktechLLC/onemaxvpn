@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "One Max VPN",
   "version": "1.0.0",
-  "description": "Privacy VPN and data saver — аналог Samsung Max VPN",
+  "description": "Privacy VPN and data saver - аналог Samsung Max VPN",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -17,14 +17,21 @@
   },
   "permissions": [
     "proxy",
-    "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
     "storage",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
     "webRequest",
     "webRequestBlocking"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
-  "update_url": "https://one-max-vpn.vercel.app/update.json"
+  "update_url": "https://one-max-vpn.vercel.app/update.json",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

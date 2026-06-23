@@ -3,28 +3,36 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body { width: 320px; font-family: Arial, sans-serif; padding: 10px; background: #f8f9fa; }
-    .header { text-align: center; margin-bottom: 20px; }
-    .connect { background: #34c759; color: white; border: none; padding: 12px 40px; font-size: 18px; border-radius: 30px; cursor: pointer; }
-    .toggle { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; margin: 8px 0; border-radius: 12px; }
-    .rate { color: #007aff; text-align: right; }
+    body { width: 320px; font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
+    .header { padding: 20px; text-align: center; background: white; }
+    .logo { font-size: 24px; font-weight: bold; }
+    .connect-btn {
+      display: block; margin: 20px auto; padding: 12px 40px; background: #34c759; color: white; border: none; border-radius: 30px; font-size: 16px; cursor: pointer;
+    }
+    .toggle { display: flex; justify-content: space-between; padding: 15px 20px; background: white; margin: 8px; border-radius: 12px; align-items: center; }
+    .rate { color: #007aff; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h2>One Max VPN</h2>
+    <div class="logo">One Max <span style="color:#34c759">VPN</span></div>
     <p>Privacy VPN and data saver</p>
-    <button id="connect" class="connect">Connect</button>
+    <button id="connectBtn" class="connect-btn">Connect</button>
   </div>
 
   <div class="toggle">
     <div>Wi-Fi data saving mode</div>
-    <label class="switch"><input type="checkbox" id="datasave"><span></span></label>
+    <label class="switch"><input type="checkbox" id="dataSave"><span></span></label>
   </div>
 
   <div class="toggle">
     <div>Privacy protection</div>
     <label class="switch"><input type="checkbox" id="privacy"><span></span></label>
+  </div>
+
+  <div style="padding: 15px; text-align: center;">
+    <p>Like One Max?</p>
+    <button class="rate">Rate</button>
   </div>
 
   <script src="popup.js"></script>

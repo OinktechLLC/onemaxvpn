@@ -1,35 +1,26 @@
-// popup.js — Логика попапа One Max VPN
-let isEnabled = false;
+// Логика попапа One Max VPN
 
-document.getElementById('connectBtn').addEventListener('click', async () => {
-  isEnabled = !isEnabled;
-  const btn = document.getElementById('connectBtn');
-  
-  if (isEnabled) {
-    btn.textContent = 'Disconnect';
-    btn.style.background = '#ff3b30';
-    
-    // Пример production прокси (обновляется из servers.json)
-    const proxy = { host: "proxy.one-max-vpn.com", port: "8080" };
-    
-    chrome.runtime.sendMessage({
-      action: "toggleVPN",
-      enabled: true,
-      proxy: proxy
-    });
-  } else {
-    btn.textContent = 'Connect';
-    btn.style.background = '#34c759';
-    
-    chrome.runtime.sendMessage({
-      action: "toggleVPN",
-      enabled: false
-    });
-  }
-});
+document.addEventListener('DOMContentLoaded', async () => {
+  const connectBtn = document.getElementById('connectBtn');
+  const dataSave = document.getElementById('dataSave');
+  const privacy = document.getElementById('privacy');
 
-// Загрузка сохранённого состояния
-chrome.storage.local.get('vpnEnabled', (data) => {
-  isEnabled = data.vpnEnabled || false;
-  // Обновить UI...
+  // Загружаем состояние
+  const state = await chrome.storage.local.get(['vpnEnabled']);
+  connectBtn.textContent = state.vpnEnabled ? 'Disconnect' : 'Connect';
+  connectBtn.style.background = state.vpnEnabled ? '#ff3b30' : '#34c759';
+
+  connectBtn.addEventListener('click', () => {
+    const enabled = connectBtn.textContent === 'Connect';
+    chrome.runtime.sendMessage({
+      action: 'toggleVPN',
+      enabled: enabled,
+      server: { host: 'live.proxy.one-max.com', port: 8080 }
+    }, (response) => {
+      if (response.success) {
+        connectBtn.textContent = enabled ? 'Disconnect' : 'Connect';
+        connectBtn.style.background = enabled ? '#ff3b30' : '#34c759';
+      }
+    });
+  });
 });
