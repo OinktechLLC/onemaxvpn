@@ -1,64 +1,41 @@
-// background.js — Service Worker для One Max VPN
-// Реализует прокси, блокировку трекеров и статистику
+// Background service worker — управление VPN прокси и блокировкой
 
-let isVPNEnabled = false;
-let currentProxy = null;
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('One Max VPN установлен');
+});
 
-// Список правил для блокировки трекеров (EasyList-подобные)
-const trackerRules = [
-  { id: 1, priority: 1, action: { type: "block" }, condition: { urlFilter: "google-analytics.com" } },
-  { id: 2, priority: 1, action: { type: "block" }, condition: { urlFilter: "doubleclick.net" } },
-  { id: 3, priority: 1, action: { type: "block" }, condition: { urlFilter: "facebook.com/tr" } },
-  // Добавляй больше правил
-];
-
-// Включаем VPN (прокси)
-async function enableVPN(proxyConfig) {
-  currentProxy = proxyConfig;
-  isVPNEnabled = true;
-  
-  await chrome.proxy.settings.set({
-    value: {
+// Включение/выключение VPN
+async function toggleVPN(enabled) {
+  if (enabled) {
+    // Пример: использование SOCKS5 прокси (реальный сервер из servers.json)
+    const config = {
       mode: "fixed_servers",
       rules: {
         singleProxy: {
-          scheme: "http",
-          host: proxyConfig.host,
-          port: parseInt(proxyConfig.port)
+          scheme: "socks5",
+          host: "proxy.example.com",  // будет обновляться
+          port: 1080
         }
       }
-    },
-    scope: 'regular'
-  });
-  
-  // Обновляем правила блокировки
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: trackerRules.map(r => r.id),
-    addRules: trackerRules
-  });
-  
-  console.log("✅ One Max VPN включен");
-}
-
-// Выключаем VPN
-async function disableVPN() {
-  isVPNEnabled = false;
-  await chrome.proxy.settings.set({
-    value: { mode: "direct" },
-    scope: 'regular'
-  });
-  console.log("❌ One Max VPN выключен");
-}
-
-// Слушаем сообщения от popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "toggleVPN") {
-    if (message.enabled) {
-      enableVPN(message.proxy);
-    } else {
-      disableVPN();
-    }
-    sendResponse({ success: true });
+    };
+    await chrome.proxy.settings.set({ value: config, scope: 'regular' });
+    console.log('VPN включен');
+  } else {
+    await chrome.proxy.settings.set({ value: { mode: 'system' }, scope: 'regular' });
+    console.log('VPN выключен');
   }
-  return true;
+}
+
+// Блокировка трекеров (declarativeNetRequest)
+chrome.declarativeNetRequest.updateDynamicRules({
+  removeRuleIds: [1],
+  addRules: [{
+    id: 1,
+    priority: 1,
+    action: { type: "block" },
+    condition: {
+      urlFilter: "*google-analytics.com*|*doubleclick.net*|*facebook.com/tr*",
+      resourceTypes: ["xmlhttprequest", "image", "script"]
+    }
+  }]
 });

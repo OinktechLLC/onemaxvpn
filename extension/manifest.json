@@ -17,19 +17,14 @@
   },
   "permissions": [
     "proxy",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
     "storage",
     "webRequest",
-    "declarativeNetRequest",
-    "declarativeNetRequestFeedback"
+    "webRequestBlocking"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
-  "update_url": "https://one-max-vpn.vercel.app/update.json",
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ]
+  "update_url": "https://one-max-vpn.vercel.app/update.json"
 }

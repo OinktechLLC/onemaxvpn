@@ -1,50 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <style>
-    body { width: 360px; font-family: Arial, sans-serif; margin: 0; background: #f8f9fa; }
-    .header { text-align: center; padding: 20px 10px; background: white; }
-    .logo { font-size: 24px; font-weight: bold; }
-    .connect-btn {
-      background: #34c759; color: white; border: none; padding: 14px 40px;
-      font-size: 18px; border-radius: 30px; margin: 20px auto; display: block;
-      cursor: pointer;
-    }
-    .toggle { display: flex; justify-content: space-between; padding: 15px; background: white; margin: 8px; border-radius: 12px; }
-    .rate, .details { color: #007aff; cursor: pointer; }
+    body { width: 320px; font-family: Arial, sans-serif; padding: 10px; background: #f8f9fa; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .connect { background: #34c759; color: white; border: none; padding: 12px 40px; font-size: 18px; border-radius: 30px; cursor: pointer; }
+    .toggle { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; margin: 8px 0; border-radius: 12px; }
+    .rate { color: #007aff; text-align: right; }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">SAMSUNG <span style="color:#000;">Max</span> <span style="font-size:12px;">VPN</span></div>
-    <div style="font-size:14px;color:#666;">Privacy VPN and data saver</div>
+    <h2>One Max VPN</h2>
+    <p>Privacy VPN and data saver</p>
+    <button id="connect" class="connect">Connect</button>
   </div>
-  
-  <button id="connectBtn" class="connect-btn">Connect</button>
-  
+
   <div class="toggle">
-    <div>Wi-Fi data saving mode<br><strong>Off</strong></div>
-    <label class="switch"><input type="checkbox" id="dataSave"><span></span></label>
+    <div>Wi-Fi data saving mode</div>
+    <label class="switch"><input type="checkbox" id="datasave"><span></span></label>
   </div>
-  
+
   <div class="toggle">
-    <div>Privacy protection<br><strong>Off</strong></div>
+    <div>Privacy protection</div>
     <label class="switch"><input type="checkbox" id="privacy"><span></span></label>
   </div>
-  
-  <div style="padding:15px;background:white;margin:8px;border-radius:12px;">
-    <div>Like One Max?</div>
-    <div style="font-size:13px;color:#666;">Please rate us if you've enjoyed using One Max.</div>
-    <div class="rate" style="text-align:right;margin-top:8px;">Rate</div>
-  </div>
-  
-  <div style="padding:15px;background:white;margin:8px;border-radius:12px;">
-    <div>Ultra apps</div>
-    <div style="font-size:13px;color:#666;">Apps on your terms. Save data...</div>
-    <div class="details" style="text-align:right;margin-top:8px;">Details</div>
-  </div>
-  
+
   <script src="popup.js"></script>
 </body>
 </html>
