@@ -1,42 +1,336 @@
-name: Build One Max VPN
+name: 🤖 One Max VPN — Robot & Build
 
 on:
+  # Каждый день в 00:00 UTC — робот обновляет серверы
+  schedule:
+    - cron: '0 0 * * *'
+  # При пуше в main — пересборка расширения
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'extension/**'
-  schedule:
-    - cron: '0 0 * * *'  # Daily at midnight UTC
+      - 'landing/**'
+      - 'robot/**'
+  # Ручной запуск
   workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Пропустить сборку ZIP (только обновить серверы)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
 
 jobs:
-  build:
+
+  # ════════════════════════════════════════════════════════════════
+  # JOB 1: Поисковой робот — ищет рабочие прокси
+  # ════════════════════════════════════════════════════════════════
+  robot:
+    name: 🔍 Proxy Robot
     runs-on: ubuntu-latest
+    outputs:
+      server_count: ${{ steps.run_robot.outputs.count }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: 22
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update servers
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        run: |
-          cd bot
-          python3 -m pip install -r requirements.txt
-          python3 servers.py
-
-      - name: Build extension
-        run: |
-          echo "Extension built successfully"
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        if: github.event_name == 'push'
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
         with:
-          files: extension.zip
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: robot/requirements.txt
+
+      - name: Установить зависимости робота
+        run: pip install -r robot/requirements.txt
+
+      - name: 🤖 Запустить поискового робота
+        id: run_robot
+        run: |
+          cd robot
+          python fetch_servers.py
+          COUNT=$(python3 -c "import json; d=json.load(open('../landing/servers.json')); print(len(d))")
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "✅ Рабочих серверов: $COUNT"
+
+      - name: Проверить результат (минимум 5 серверов)
+        run: |
+          COUNT=${{ steps.run_robot.outputs.count }}
+          if [ "$COUNT" -lt 5 ]; then
+            echo "❌ Мало серверов: $COUNT < 5"
+            exit 1
+          fi
+          echo "✅ Серверов достаточно: $COUNT"
+
+      - name: Показать топ-10 найденных серверов
+        run: |
+          python3 -c "
+          import json
+          servers = json.load(open('landing/servers.json'))
+          print(f'Топ-10 из {len(servers)} серверов:')
+          for s in servers[:10]:
+              ping = f\"{s['ping']}ms\" if s.get('ping') else '—'
+              print(f\"  {s['flag']} {s['name']:<20} {s['host']:<18}:{s['port']:<5} {ping}\")
+          "
+
+      - name: Обновить update.json с текущей версией
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('extension/manifest.json'))['version'])")
+          cat > landing/update.json << EOF
+          {
+            "addons": {
+              "one-max-vpn@oinktech.ltd": {
+                "updates": [
+                  {
+                    "version": "${VERSION}",
+                    "update_link": "https://github.com/${{ github.repository }}/releases/latest/download/one-max-vpn-v${VERSION}.zip"
+                  }
+                ]
+              }
+            }
+          }
+          EOF
+          echo "✅ update.json → v${VERSION}"
+
+      - name: Коммит обновлённых серверов
+        run: |
+          git config user.name  "OneMaxVPN Robot"
+          git config user.email "robot@one-max-vpn.vercel.app"
+          git add landing/servers.json landing/update.json
+          if git diff --staged --quiet; then
+            echo "Изменений нет — коммит не нужен"
+          else
+            COUNT=${{ steps.run_robot.outputs.count }}
+            git commit -m "🤖 [Robot] Обновление серверов: ${COUNT} рабочих прокси $(date -u '+%Y-%m-%d')"
+            git push
+            echo "✅ Серверы закоммичены"
+          fi
+
+  # ════════════════════════════════════════════════════════════════
+  # JOB 2: Сборка расширения и создание ZIP
+  # ════════════════════════════════════════════════════════════════
+  build:
+    name: 📦 Build Extension
+    runs-on: ubuntu-latest
+    needs: robot
+    if: github.event.inputs.skip_build != 'true'
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main  # берём свежий коммит от робота
+
+      - name: Получить версию
+        id: version
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('extension/manifest.json'))['version'])")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📌 Версия: $VERSION"
+
+      - name: Валидация manifest.json
+        run: |
+          python3 << 'EOF'
+          import json, sys
+          with open('extension/manifest.json') as f:
+              m = json.load(f)
+          errors = []
+          if m.get('manifest_version') != 3:           errors.append('manifest_version должен быть 3')
+          if not m.get('name'):                         errors.append('Нет поля name')
+          if not m.get('version'):                      errors.append('Нет поля version')
+          if not m.get('background', {}).get('service_worker'): errors.append('Нет service_worker')
+          if not m.get('action', {}).get('default_popup'):      errors.append('Нет default_popup')
+          if errors:
+              print('❌ Ошибки манифеста:')
+              for e in errors: print(' -', e)
+              sys.exit(1)
+          print(f"✅ manifest.json валиден: {m['name']} v{m['version']}")
+          EOF
+
+      - name: Проверить все файлы расширения
+        run: |
+          echo "Файлы расширения:"
+          find extension/ -type f | sort
+          # Проверяем что все файлы из manifest существуют
+          python3 << 'EOF'
+          import json, os
+          m = json.load(open('extension/manifest.json'))
+          missing = []
+          files_to_check = []
+          # Проверяем иконки
+          for size, path in m.get('icons', {}).items():
+              files_to_check.append(f'extension/{path}')
+          # Проверяем popup
+          if popup := m.get('action', {}).get('default_popup'):
+              files_to_check.append(f'extension/{popup}')
+          # Проверяем service worker
+          if sw := m.get('background', {}).get('service_worker'):
+              files_to_check.append(f'extension/{sw}')
+          for f in files_to_check:
+              if not os.path.exists(f):
+                  missing.append(f)
+          if missing:
+              print('❌ Отсутствуют файлы:')
+              for f in missing: print(' -', f)
+              exit(1)
+          print(f'✅ Все {len(files_to_check)} файлов на месте')
+          EOF
+
+      - name: Создать иконки если не существуют
+        run: |
+          python3 << 'EOF'
+          import struct, zlib, os
+          def make_png(size, rgb=(88,166,255)):
+              r,g,b = rgb
+              w=h=size
+              def chunk(t,d): c=t+d; return struct.pack('>I',len(d))+c+struct.pack('>I',zlib.crc32(c)&0xffffffff)
+              ihdr=struct.pack('>IIBBBBB',w,h,8,2,0,0,0)
+              rows=[]
+              for y in range(h):
+                  row=[0]
+                  for x in range(w):
+                      nx=(x/w)*2-1; ny=(y/h)*2-1
+                      if abs(nx)<0.75-max(0,ny-0.2)*0.6 and ny<0.9:
+                          f=1-abs(ny)*0.3; row+=[int(r*f),int(g*f),int(b*f)]
+                      else: row+=[0,0,0]
+                  rows.append(bytes(row))
+              idat=zlib.compress(b''.join(rows),9)
+              return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',ihdr)+chunk(b'IDAT',idat)+chunk(b'IEND',b'')
+          os.makedirs('extension/icons', exist_ok=True)
+          for sz in [16,48,128]:
+              p=f'extension/icons/icon{sz}.png'
+              if not os.path.exists(p):
+                  open(p,'wb').write(make_png(sz))
+                  print(f'Created {p}')
+              else: print(f'OK {p}')
+          EOF
+
+      - name: Собрать ZIP
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          ZIP="one-max-vpn-v${VERSION}.zip"
+          cd extension
+          zip -r "../${ZIP}" . \
+            --exclude "*.DS_Store" \
+            --exclude "__MACOSX/*" \
+            --exclude "*.map"
+          cd ..
+          echo "✅ ZIP: $ZIP ($(du -sh $ZIP | cut -f1))"
+          echo "Содержимое:"
+          unzip -l "$ZIP" | head -40
+
+      - name: Загрузить ZIP как артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: one-max-vpn-extension
+          path: one-max-vpn-v${{ steps.version.outputs.version }}.zip
+          retention-days: 90
+
+  # ════════════════════════════════════════════════════════════════
+  # JOB 3: Создать GitHub Release
+  # ════════════════════════════════════════════════════════════════
+  release:
+    name: 🚀 GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    # Релиз создаём только при пуше или ручном запуске, не по расписанию
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Скачать артефакт
+        uses: actions/download-artifact@v4
+        with:
+          name: one-max-vpn-extension
+
+      - name: Удалить старый тег если есть
+        run: |
+          TAG="v${{ needs.build.outputs.version }}"
+          git tag -d "$TAG" 2>/dev/null || true
+          git push origin ":refs/tags/$TAG" 2>/dev/null || true
+
+      - name: Создать Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build.outputs.version }}
+          name: "🛡️ One Max VPN v${{ needs.build.outputs.version }}"
+          body: |
+            ## 🛡️ One Max VPN v${{ needs.build.outputs.version }}
+
+            ### 📦 Как установить
+
+            1. Скачай ZIP-файл ниже
+            2. Распакуй архив в любую папку
+            3. Открой `chrome://extensions` (или `edge://extensions`)
+            4. Включи **«Режим разработчика»** (переключатель справа вверху)
+            5. Нажми **«Загрузить распакованное расширение»**
+            6. Выбери распакованную папку
+
+            ### ✨ Возможности
+
+            - 🔒 VPN через HTTP-прокси (один клик)
+            - 🚫 Блокировка 30 трекеров (Google, Яндекс, Facebook и др.)
+            - 🔄 Автообновление серверов каждые 24ч (GitHub Actions робот)
+            - 📊 Статистика сэкономленного трафика
+            - 🕵️ Режим инкогнито при отключении
+            - 🌍 ${{ needs.robot.outputs.server_count }} рабочих серверов в пуле
+
+            ### 🤖 Как работает автообновление
+
+            Каждый день в 00:00 UTC GitHub Actions запускает поискового робота,
+            который проверяет сотни прокси-серверов и сохраняет рабочие в `servers.json`.
+            Расширение подтягивает свежий список автоматически каждые 24ч.
+
+            ---
+            *Сборка: ${{ github.sha }}*
+          files: one-max-vpn-v${{ needs.build.outputs.version }}.zip
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ════════════════════════════════════════════════════════════════
+  # JOB 4: Деплой лендинга на Vercel
+  # ════════════════════════════════════════════════════════════════
+  deploy:
+    name: 🌐 Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: robot
+    if: always() && needs.robot.result == 'success'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Установить Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Деплой на Vercel
+        run: |
+          cd landing
+          vercel --prod --yes \
+            --token="${{ secrets.VERCEL_TOKEN }}"
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        # Если секретов нет — не ломаем весь pipeline
+        continue-on-error: true
