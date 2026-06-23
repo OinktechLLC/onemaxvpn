@@ -1,4 +1,12 @@
 {
-  "version": "1.0.1",
-  "update_url": "https://github.com/yourusername/one-max-vpn/releases/latest/download/extension.zip"
+  "addons": {
+    "one-max-vpn@oinktech.ltd": {
+      "updates": [
+        {
+          "version": "1.0.0",
+          "update_link": "https://github.com/OinkTechLtd/one-max-vpn/releases/latest/download/one-max-vpn-v1.0.0.zip"
+        }
+      ]
+    }
+  }
 }
