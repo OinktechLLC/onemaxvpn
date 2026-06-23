@@ -26,9 +26,10 @@
     "<all_urls>"
   ],
   "update_url": "https://one-max-vpn.vercel.app/update.json",
-  "_locales": {
-    "en": {
-      "name": "One Max VPN"
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
     }
-  }
+  ]
 }

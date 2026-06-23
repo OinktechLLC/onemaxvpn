@@ -1,64 +1,64 @@
 // background.js — Service Worker для One Max VPN
+// Реализует прокси, блокировку трекеров и статистику
 
-console.log('One Max VPN background started');
-
-// Глобальное состояние
 let isVPNEnabled = false;
 let currentProxy = null;
 
-// Список серверов (обновляется ботом)
-const SERVER_POOL = [
-  { host: "proxy1.example.com", port: 8080, username: "", password: "" },
-  { host: "proxy2.example.com", port: 8080, username: "", password: "" }
+// Список правил для блокировки трекеров (EasyList-подобные)
+const trackerRules = [
+  { id: 1, priority: 1, action: { type: "block" }, condition: { urlFilter: "google-analytics.com" } },
+  { id: 2, priority: 1, action: { type: "block" }, condition: { urlFilter: "doubleclick.net" } },
+  { id: 3, priority: 1, action: { type: "block" }, condition: { urlFilter: "facebook.com/tr" } },
+  // Добавляй больше правил
 ];
 
-// Включение VPN
-async function enableVPN() {
+// Включаем VPN (прокси)
+async function enableVPN(proxyConfig) {
+  currentProxy = proxyConfig;
   isVPNEnabled = true;
   
-  // Выбираем случайный сервер
-  currentProxy = SERVER_POOL[Math.floor(Math.random() * SERVER_POOL.length)];
-
   await chrome.proxy.settings.set({
     value: {
       mode: "fixed_servers",
       rules: {
         singleProxy: {
           scheme: "http",
-          host: currentProxy.host,
-          port: currentProxy.port
+          host: proxyConfig.host,
+          port: parseInt(proxyConfig.port)
         }
       }
     },
     scope: 'regular'
   });
-
-  console.log('VPN включён через', currentProxy.host);
-  chrome.storage.local.set({ vpnEnabled: true, currentProxy });
+  
+  // Обновляем правила блокировки
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: trackerRules.map(r => r.id),
+    addRules: trackerRules
+  });
+  
+  console.log("✅ One Max VPN включен");
 }
 
-// Выключение VPN
+// Выключаем VPN
 async function disableVPN() {
   isVPNEnabled = false;
-  await chrome.proxy.settings.clear({ scope: 'regular' });
-  chrome.storage.local.set({ vpnEnabled: false });
-  console.log('VPN выключен');
+  await chrome.proxy.settings.set({
+    value: { mode: "direct" },
+    scope: 'regular'
+  });
+  console.log("❌ One Max VPN выключен");
 }
 
 // Слушаем сообщения от popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'toggleVPN') {
-    if (isVPNEnabled) {
-      disableVPN();
+  if (message.action === "toggleVPN") {
+    if (message.enabled) {
+      enableVPN(message.proxy);
     } else {
-      enableVPN();
+      disableVPN();
     }
-    sendResponse({ success: true, enabled: !isVPNEnabled });
+    sendResponse({ success: true });
   }
   return true;
-});
-
-// Инициализация
-chrome.storage.local.get('vpnEnabled', (data) => {
-  if (data.vpnEnabled) enableVPN();
 });

@@ -1,12 +1,10 @@
-// content.js — инъекция на страницы для оптимизации (сжатие изображений и т.д.)
+// content.js — Сжатие и оптимизация страниц
+console.log("🚀 One Max VPN content script loaded");
 
-console.log('One Max VPN content script loaded');
-
-// Пример: оптимизация изображений (замена на lazy + низкое качество)
+// Пример оптимизации изображений (реальное сжатие требует backend)
 document.querySelectorAll('img').forEach(img => {
-  if (img.src && !img.dataset.optimized) {
-    img.loading = 'lazy';
-    img.dataset.optimized = 'true';
-    console.log('Optimized image:', img.src);
+  if (img.src && img.src.startsWith('http')) {
+    console.log('Optimizing image:', img.src);
+    // В production: отправлять на compression proxy
   }
 });
