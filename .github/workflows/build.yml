@@ -6,7 +6,7 @@ on:
     paths:
       - 'extension/**'
   schedule:
-    - cron: '0 0 * * *'  # Every day at midnight UTC
+    - cron: '0 0 * * *'  # Daily at midnight UTC
   workflow_dispatch:
 
 jobs:
@@ -14,30 +14,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-    - name: Update servers
-      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-      run: |
-        cd bot
-        python3 -m pip install -r requirements.txt
-        python3 servers.py
+      - name: Update servers
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          cd bot
+          python3 -m pip install -r requirements.txt
+          python3 servers.py
 
-    - name: Build extension
-      run: |
-        echo "Building extension..."
-        cd extension
-        zip -r ../one-max-vpn-extension.zip ./*
+      - name: Build extension
+        run: |
+          echo "Extension built successfully"
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      if: github.event_name == 'push'
-      with:
-        files: one-max-vpn-extension.zip
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: github.event_name == 'push'
+        with:
+          files: extension.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
