@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>One Max VPN — СБП для РФ</title>
+<meta name="description" content="Разблокируй YouTube, Telegram, WhatsApp, Claude AI и другие сайты в России. Бесплатное расширение для Chrome/Edge.">
+<style>
+:root{--bg:#f2f2f7;--white:#fff;--acc:#007aff;--green:#34c759;--text:#1c1c1e;--muted:#8e8e93;--brd:#e5e5ea;--r:16px;--max:1080px}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',sans-serif;line-height:1.6}
+a{color:inherit;text-decoration:none}
+.container{max-width:var(--max);margin:0 auto;padding:0 20px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:40px;font-size:15px;font-weight:700;cursor:pointer;border:none;transition:all .2s}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 4px 20px #34c75940}
+.btn-green:hover{transform:translateY(-1px);box-shadow:0 6px 28px #34c75950}
+.btn-ghost{background:transparent;color:var(--acc);border:2px solid var(--acc)}
+.btn-ghost:hover{background:var(--acc);color:#fff}
+
+nav{background:#ffffffee;backdrop-filter:blur(12px);border-bottom:1px solid var(--brd);position:sticky;top:0;z-index:99}
+.nav-in{max-width:var(--max);margin:0 auto;padding:13px 20px;display:flex;align-items:center;gap:16px}
+.nav-logo{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800}
+.nav-logo svg{width:26px;height:26px}
+.nav-links{display:flex;gap:20px;margin-left:auto}
+.nav-links a{font-size:13px;color:var(--muted);font-weight:500}
+.nav-links a:hover{color:var(--text)}
+
+.hero{background:var(--white);padding:72px 0 56px;text-align:center;border-bottom:1px solid var(--brd)}
+.hero-tag{display:inline-block;background:#e6f7ed;color:var(--green);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;margin-bottom:18px}
+.hero h1{font-size:clamp(32px,6vw,60px);font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:14px}
+.hero h1 span{color:var(--acc)}
+.hero-sub{font-size:16px;color:var(--muted);max-width:500px;margin:0 auto 28px}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:44px}
+.hero-stats{display:flex;gap:36px;justify-content:center;flex-wrap:wrap}
+.hs{text-align:center}
+.hs-n{font-size:26px;font-weight:800;color:var(--acc)}
+.hs-l{font-size:11px;color:var(--muted)}
+
+.section{padding:64px 0}
+.s-dark{background:var(--white)}
+.s-tag{font-size:11px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+.s-h2{font-size:clamp(22px,4vw,38px);font-weight:800;letter-spacing:-1px;margin-bottom:40px}
+
+/* Unblock grid */
+.unblock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:40px}
+.ub-card{background:var(--white);border-radius:14px;padding:18px 14px;text-align:center;border:1px solid var(--brd)}
+.ub-ico{font-size:28px;margin-bottom:8px}
+.ub-name{font-size:13px;font-weight:600}
+.ub-tag{font-size:10px;color:var(--green);font-weight:700;margin-top:2px}
+
+/* Features */
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.feat{background:var(--white);border-radius:var(--r);padding:22px;border:1px solid var(--brd)}
+.feat-ico{font-size:28px;margin-bottom:12px}
+.feat h3{font-size:14px;font-weight:700;margin-bottom:6px}
+.feat p{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* Compare */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--brd);background:var(--white)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:13px 16px;text-align:left;font-size:13px;border-bottom:1px solid var(--brd)}
+th{font-size:12px;font-weight:700;background:#f9f9fb}
+tr:last-child td{border-bottom:none}
+.our{color:var(--green);font-weight:700}
+th.our{background:#f0fbf4;color:var(--green)}
+
+/* Install */
+.inst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.inst{background:var(--white);border-radius:var(--r);padding:22px;border:1px solid var(--brd)}
+.inst.main{border-color:var(--acc)}
+.inst-n{width:30px;height:30px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.inst h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.inst p{font-size:13px;color:var(--muted);margin-bottom:14px}
+.steps{display:flex;flex-direction:column;gap:5px;margin-top:12px}
+.step{font-size:12px;color:var(--muted);background:var(--bg);padding:6px 10px;border-radius:7px}
+code{background:var(--brd);padding:1px 4px;border-radius:3px;font-size:11px}
+
+footer{background:var(--text);color:#ffffff88;padding:28px 0}
+.foot-in{max-width:var(--max);margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.foot-logo{color:#fff;font-size:14px;font-weight:800}
+.foot-links{display:flex;gap:16px;margin-left:auto}
+.foot-links a{font-size:12px;color:#ffffff66}
+.foot-links a:hover{color:#fff}
+.foot-copy{font-size:11px;width:100%;margin-top:6px}
+
+@media(max-width:680px){.nav-links{display:none}.hero{padding:44px 0 36px}.foot-links{margin-left:0}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-in">
+    <div class="nav-logo">
+      <svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#1c1c1e"/><path d="M20 5L33 10.5L33 22Q33 31 20 37Q7 31 7 22L7 10.5Z" fill="#34c759"/><path d="M14 20.5L18 24.5L27 16" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      One Max VPN
+    </div>
+    <div class="nav-links">
+      <a href="#unblock">Что разблокирует</a>
+      <a href="#features">Возможности</a>
+      <a href="#install">Установка</a>
+      <a href="https://github.com/OinkTechLtd/one-max-vpn" target="_blank">GitHub</a>
+    </div>
+    <a class="btn btn-green" href="#install" style="margin-left:auto;padding:9px 18px;font-size:13px">Скачать</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-tag">🇷🇺 Для пользователей из РФ · Бесплатно</div>
+    <h1>Открой интернет<br>без <span>ограничений</span></h1>
+    <p class="hero-sub">СБП-расширение для Chrome/Edge. YouTube, Telegram, WhatsApp, Claude AI и другие — одним кликом. Серверы обновляются каждый день автоматически.</p>
+    <div class="hero-btns">
+      <a class="btn btn-green" id="btnDl" href="https://github.com/OinkTechLtd/one-max-vpn/releases/latest" target="_blank">⬇️ Скачать расширение</a>
+      <a class="btn btn-ghost" href="https://github.com/OinkTechLtd/one-max-vpn" target="_blank">★ GitHub</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hs"><div class="hs-n" id="statSrv">50+</div><div class="hs-l">серверов в пуле</div></div>
+      <div class="hs"><div class="hs-n">35+</div><div class="hs-l">сайтов разблокировано</div></div>
+      <div class="hs"><div class="hs-n">30</div><div class="hs-l">трекеров блокирует</div></div>
+      <div class="hs"><div class="hs-n">24ч</div><div class="hs-l">авто-обновление</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="unblock">
+  <div class="container">
+    <div class="s-tag">Разблокировка</div>
+    <h2 class="s-h2">Всё что заблокировано в РФ</h2>
+    <div class="unblock-grid">
+      <div class="ub-card"><div class="ub-ico">▶️</div><div class="ub-name">YouTube</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">✈️</div><div class="ub-name">Telegram</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">💬</div><div class="ub-name">WhatsApp</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">🤖</div><div class="ub-name">Claude AI</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">💡</div><div class="ub-name">ChatGPT</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">📸</div><div class="ub-name">Instagram</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">🐦</div><div class="ub-name">Twitter/X</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">🎮</div><div class="ub-name">Discord</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">👾</div><div class="ub-name">Reddit</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">🎵</div><div class="ub-name">TikTok</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">🎸</div><div class="ub-name">Spotify</div><div class="ub-tag">✓ Работает</div></div>
+      <div class="ub-card"><div class="ub-ico">👾</div><div class="ub-name">GitHub</div><div class="ub-tag">✓ Работает</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section s-dark" id="features">
+  <div class="container">
+    <div class="s-tag">Возможности</div>
+    <h2 class="s-h2">Всё как в Samsung Max VPN</h2>
+    <div class="feat-grid">
+      <div class="feat"><div class="feat-ico">🔒</div><h3>СБП — Selective Bypass</h3><p>Только заблокированные сайты идут через прокси. Остальной трафик — напрямую. Скорость не падает.</p></div>
+      <div class="feat"><div class="feat-ico">🤖</div><h3>Робот обновляет серверы</h3><p>GitHub Actions каждый день в 00:00 UTC ищет рабочие прокси из 8 источников, проверяет их и сохраняет топ-50.</p></div>
+      <div class="feat"><div class="feat-ico">🚫</div><h3>Блокировка трекеров</h3><p>30 правил declarativeNetRequest: Google Analytics, Яндекс.Метрика, Facebook Pixel и другие.</p></div>
+      <div class="feat"><div class="feat-ico">💾</div><h3>Экономия трафика</h3><p>Статистика сэкономленных данных прямо в попапе. Режим Wi-Fi Data Saving как у Samsung Max.</p></div>
+      <div class="feat"><div class="feat-ico">🌍</div><h3>Свои сайты</h3><p>Добавь любой сайт в список обхода прямо из расширения. Изменения применяются мгновенно.</p></div>
+      <div class="feat"><div class="feat-ico">🕵️</div><h3>Приватность</h3><p>Очистка куки, кеша и localStorage при отключении СБП. Никаких следов сессии.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="compare">
+  <div class="container">
+    <div class="s-tag">Сравнение</div>
+    <h2 class="s-h2">One Max VPN vs Samsung Max</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Функция</th><th class="our">One Max VPN</th><th>Samsung Max</th></tr></thead>
+        <tbody>
+          <tr><td>Платформа</td>            <td class="our">✅ Chrome / Edge (любой ПК)</td><td>⚠️ Только Samsung</td></tr>
+          <tr><td>Разблокировка РФ</td>     <td class="our">✅ 35+ сайтов</td>             <td>⚠️ Ограниченно</td></tr>
+          <tr><td>YouTube</td>              <td class="our">✅ Да</td>                     <td>✅ Да</td></tr>
+          <tr><td>Telegram</td>             <td class="our">✅ Да</td>                     <td>✅ Да</td></tr>
+          <tr><td>Claude AI / ChatGPT</td>  <td class="our">✅ Да</td>                     <td>❌ Нет</td></tr>
+          <tr><td>Блокировка трекеров</td>  <td class="our">✅ 30 правил</td>              <td>✅ Да</td></tr>
+          <tr><td>Экономия трафика</td>     <td class="our">✅ Статистика</td>             <td>✅ Да</td></tr>
+          <tr><td>Авто-смена серверов</td>  <td class="our">✅ Каждые 24ч (робот)</td>     <td>❌ Нет</td></tr>
+          <tr><td>Свои домены</td>          <td class="our">✅ Из расширения</td>          <td>❌ Нет</td></tr>
+          <tr><td>Open Source</td>          <td class="our">✅ GitHub</td>                 <td>❌ Проприетарный</td></tr>
+          <tr><td>Цена</td>                 <td class="our">✅ Бесплатно</td>              <td>✅ Встроен</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section s-dark" id="install">
+  <div class="container">
+    <div class="s-tag">Установка</div>
+    <h2 class="s-h2">Три шага и готово</h2>
+    <div class="inst-grid">
+      <div class="inst main">
+        <div class="inst-n">1</div>
+        <h3>Скачать ZIP</h3>
+        <p>Последняя версия с GitHub Releases — обновляется автоматически при каждой сборке.</p>
+        <a class="btn btn-green" id="btnZip" href="https://github.com/OinkTechLtd/one-max-vpn/releases/latest" target="_blank">⬇️ Скачать</a>
+        <div class="steps">
+          <div class="step">① Скачай ZIP и распакуй в любую папку</div>
+          <div class="step">② Открой <code>chrome://extensions</code></div>
+          <div class="step">③ Включи «Режим разработчика» (справа вверху)</div>
+          <div class="step">④ «Загрузить распакованное» → выбери папку</div>
+          <div class="step">⑤ Нажми иконку расширения → «Включить СБП»</div>
+        </div>
+      </div>
+      <div class="inst">
+        <div class="inst-n">2</div>
+        <h3>Как работает</h3>
+        <p>После включения СБП браузер автоматически направляет заблокированные сайты через прокси-сервер. Обычные сайты работают напрямую — скорость не падает.</p>
+        <div class="steps">
+          <div class="step">Заблокированный сайт → через прокси</div>
+          <div class="step">Обычный сайт → напрямую (быстро)</div>
+          <div class="step">Серверы меняются каждые 24ч автоматически</div>
+        </div>
+      </div>
+      <div class="inst">
+        <div class="inst-n">3</div>
+        <h3>Автообновление</h3>
+        <p>Расширение проверяет <code>update.json</code> и обновляется без Chrome Web Store. Серверы загружаются автоматически.</p>
+        <div class="steps">
+          <div class="step">🤖 Робот ищет прокси каждые 24ч</div>
+          <div class="step">📦 Проверяет 500+ кандидатов</div>
+          <div class="step">✅ Сохраняет топ-50 рабочих</div>
+          <div class="step">🔄 Расширение получает свежий список</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-in">
+    <div class="foot-logo">🛡️ One Max VPN</div>
+    <div class="foot-links">
+      <a href="https://github.com/OinkTechLtd/one-max-vpn" target="_blank">GitHub</a>
+      <a href="https://github.com/OinkTechLtd/one-max-vpn/releases" target="_blank">Релизы</a>
+      <a href="servers.json" target="_blank">servers.json</a>
+      <a href="update.json" target="_blank">update.json</a>
+    </div>
+    <div class="foot-copy">© 2024 OinkTech Ltd · MIT License · Серверы обновляются каждые 24ч роботом GitHub Actions</div>
+  </div>
+</footer>
+
+<script>
+fetch('servers.json?' + Date.now())
+  .then(r => r.json())
+  .then(d => { if (Array.isArray(d) && d.length) document.getElementById('statSrv').textContent = d.length + '+'; })
+  .catch(() => {});
+
+fetch('https://api.github.com/repos/OinkTechLtd/one-max-vpn/releases/latest')
+  .then(r => r.json())
+  .then(r => {
+    const zip = r.assets?.find(a => a.name.endsWith('.zip'));
+    if (zip) { document.getElementById('btnDl').href = zip.browser_download_url; document.getElementById('btnZip').href = zip.browser_download_url; }
+  }).catch(() => {});
+</script>
+</body>
+</html>

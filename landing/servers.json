@@ -1,0 +1,10 @@
+[
+  {"host":"185.220.101.1",  "port":8080,"country":"DE","name":"Germany",       "flag":"🇩🇪","ping":null},
+  {"host":"185.220.101.34", "port":8080,"country":"DE","name":"Germany",       "flag":"🇩🇪","ping":null},
+  {"host":"45.142.212.100", "port":3128,"country":"NL","name":"Netherlands",   "flag":"🇳🇱","ping":null},
+  {"host":"20.206.106.192", "port":8080,"country":"US","name":"United States", "flag":"🇺🇸","ping":null},
+  {"host":"51.91.11.29",    "port":3128,"country":"FR","name":"France",        "flag":"🇫🇷","ping":null},
+  {"host":"195.201.34.47",  "port":3128,"country":"FI","name":"Finland",       "flag":"🇫🇮","ping":null},
+  {"host":"103.149.162.195","port":80,  "country":"SG","name":"Singapore",     "flag":"🇸🇬","ping":null},
+  {"host":"217.61.106.97",  "port":3128,"country":"GB","name":"United Kingdom","flag":"🇬🇧","ping":null}
+]

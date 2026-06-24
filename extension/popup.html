@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>One Max VPN</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;min-height:600px;background:#f2f2f7;font-family:-apple-system,'Segoe UI',sans-serif;font-size:14px;color:#1c1c1e;overflow-x:hidden}
+
+/* ── Header ── */
+.hdr{background:#fff;padding:16px 16px 12px;text-align:center;border-bottom:1px solid #e5e5ea}
+.logo-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:3px}
+.logo-svg{width:30px;height:30px}
+.logo-text{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.logo-text span{color:#007aff}
+.logo-badge{background:#1c1c1e;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+.tagline{font-size:11px;color:#8e8e93;font-weight:500;margin-top:1px}
+
+/* ── Connect area ── */
+.connect-area{background:#fff;padding:20px 16px 16px;border-bottom:1px solid #e5e5ea;display:flex;flex-direction:column;align-items:center;gap:12px}
+.connect-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:200px;padding:14px 0;border-radius:40px;border:none;
+  font-size:16px;font-weight:700;cursor:pointer;transition:all .25s;
+  background:#e5e5ea;color:#8e8e93;
+}
+.connect-btn.on{background:#34c759;color:#fff;box-shadow:0 4px 24px #34c75950}
+.connect-btn.loading{background:#ff9f0a;color:#fff}
+.connect-btn svg{width:20px;height:20px;fill:currentColor;flex-shrink:0}
+.status-row{display:flex;align-items:center;gap:6px;font-size:12px;color:#8e8e93}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#c7c7cc;flex-shrink:0}
+.status-dot.on{background:#34c759;box-shadow:0 0 6px #34c75980;animation:pulse 2s infinite}
+.status-dot.err{background:#ff3b30}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Server strip ── */
+.srv-strip{background:#fff;border-bottom:1px solid #e5e5ea;padding:10px 16px;display:none;align-items:center;gap:10px}
+.srv-strip.show{display:flex}
+.srv-flag{font-size:22px;flex-shrink:0}
+.srv-info{flex:1;min-width:0}
+.srv-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srv-addr{font-size:11px;color:#8e8e93;font-family:monospace}
+.srv-ping{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0}
+.srv-ping.good{background:#e6f7ed;color:#34c759}
+.srv-ping.mid{background:#fff3e0;color:#ff9f0a}
+.srv-ping.bad{background:#ffe5e5;color:#ff3b30}
+.srv-ping.unk{background:#f2f2f7;color:#8e8e93}
+.btn-switch{padding:6px 12px;border-radius:8px;border:1px solid #e5e5ea;background:#f2f2f7;font-size:12px;font-weight:600;color:#007aff;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.btn-switch:hover{background:#e5e5ea}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:#fff;border-bottom:2px solid #e5e5ea}
+.tab{flex:1;padding:10px 2px 8px;text-align:center;font-size:11px;font-weight:600;color:#8e8e93;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap}
+.tab.active{color:#007aff;border-bottom-color:#007aff}
+.tab-icon{font-size:14px;display:block;margin-bottom:1px}
+
+/* ── Panes ── */
+.pane{display:none;padding:12px}
+.pane.active{display:block}
+
+/* ── Card ── */
+.card{background:#fff;border-radius:14px;overflow:hidden;margin-bottom:10px}
+.card-title{font-size:11px;font-weight:700;color:#8e8e93;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px 4px}
+
+/* ── Row ── */
+.row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid #f2f2f7}
+.row:last-child{border-bottom:none}
+.row-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ico-green{background:#e6f7ed}.ico-blue{background:#e8f0ff}.ico-red{background:#ffe5e5}
+.ico-orange{background:#fff3e0}.ico-purple{background:#f3e8ff}.ico-teal{background:#e0f7f5}
+.ico-gray{background:#f2f2f7}
+.row-body{flex:1;min-width:0}
+.row-title{font-size:13px;font-weight:600;color:#1c1c1e}
+.row-sub{font-size:11px;color:#8e8e93;margin-top:1px}
+.row-action{color:#007aff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.row-action.green{color:#34c759}
+.row-action.red{color:#ff3b30}
+
+/* ── Toggle ── */
+.tog{position:relative;width:51px;height:31px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-track{position:absolute;inset:0;background:#e5e5ea;border-radius:31px;cursor:pointer;transition:background .2s}
+.tog-track:before{content:'';position:absolute;width:27px;height:27px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 6px #0003}
+.tog input:checked+.tog-track{background:#34c759}
+.tog input:checked+.tog-track:before{transform:translateX(20px)}
+
+/* ── Update badge ── */
+.upd-badge{display:flex;align-items:center;gap:8px;background:#fff;border-radius:14px;padding:11px 14px;margin-bottom:10px}
+.upd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#34c759}
+.upd-dot.stale{background:#ff9f0a}
+.upd-dot.old{background:#ff3b30}
+.upd-text{flex:1;font-size:11px;color:#8e8e93;line-height:1.4}
+.btn-upd{padding:5px 11px;border-radius:8px;border:none;background:#007aff;color:#fff;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0}
+.btn-upd:disabled{background:#c7c7cc}
+
+/* ── Stats grid ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.stat-card{background:#fff;border-radius:14px;padding:14px;text-align:center}
+.stat-val{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.stat-val.blue{color:#007aff}.stat-val.green{color:#34c759}
+.stat-val.orange{color:#ff9f0a}.stat-val.purple{color:#af52de}
+.stat-lbl{font-size:10px;color:#8e8e93;margin-top:2px}
+
+/* ── Servers list ── */
+.srv-list{background:#fff;border-radius:14px;overflow:hidden}
+.srv-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #f2f2f7;cursor:pointer;transition:background .12s}
+.srv-item:last-child{border-bottom:none}
+.srv-item:hover{background:#f9f9fb}
+.srv-item.cur{background:#f0f8ff}
+.sri-flag{font-size:20px;width:28px;text-align:center;flex-shrink:0}
+.sri-info{flex:1;min-width:0}
+.sri-name{font-size:13px;font-weight:600}
+.sri-host{font-size:11px;color:#8e8e93;font-family:monospace}
+.sri-ping{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0}
+.sri-check{color:#007aff;font-size:16px;flex-shrink:0}
+
+/* ── Domains list ── */
+.dom-input-row{display:flex;gap:8px;margin-bottom:10px}
+.dom-input{flex:1;padding:9px 12px;border:1px solid #e5e5ea;border-radius:10px;font-size:13px;outline:none;background:#fff}
+.dom-input:focus{border-color:#007aff}
+.btn-add{padding:9px 14px;border-radius:10px;border:none;background:#007aff;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.dom-list{background:#fff;border-radius:14px;overflow:hidden;max-height:180px;overflow-y:auto}
+.dom-item{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #f2f2f7;font-size:13px}
+.dom-item:last-child{border-bottom:none}
+.dom-name{flex:1;font-family:monospace;color:#1c1c1e}
+.dom-built{font-size:10px;color:#8e8e93;background:#f2f2f7;padding:2px 6px;border-radius:4px}
+.dom-del{color:#ff3b30;cursor:pointer;font-size:16px;line-height:1}
+
+/* ── Info rows ── */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid #f2f2f7;font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-lbl{color:#8e8e93}
+.info-val{font-weight:600}
+.info-val.green{color:#34c759}.info-val.red{color:#ff3b30}.info-val.blue{color:#007aff}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:24px;color:#8e8e93;font-size:13px}
+.empty-ico{font-size:32px;margin-bottom:8px}
+
+/* ── Spinner ── */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #e5e5ea;border-top-color:#007aff;border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="logo-row">
+    <svg class="logo-svg" viewBox="0 0 40 40">
+      <rect width="40" height="40" rx="10" fill="#1c1c1e"/>
+      <path d="M20 5 L33 10.5 L33 22 Q33 31 20 37 Q7 31 7 22 L7 10.5 Z" fill="#34c759"/>
+      <path d="M14 20.5 L18 24.5 L27 16" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <span class="logo-text">One Max <span>VPN</span></span>
+    <span class="logo-badge">СБП</span>
+  </div>
+  <div class="tagline">Selective Bypass Proxy · Privacy &amp; Data Saver</div>
+</div>
+
+<!-- Connect -->
+<div class="connect-area">
+  <button class="connect-btn" id="connectBtn">
+    <svg viewBox="0 0 24 24" id="connectIcon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    <span id="connectLabel">Включить СБП</span>
+  </button>
+  <div class="status-row">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Отключено · Трафик без защиты</span>
+  </div>
+</div>
+
+<!-- Server strip -->
+<div class="srv-strip" id="srvStrip">
+  <div class="srv-flag" id="sFlag">🌐</div>
+  <div class="srv-info">
+    <div class="srv-name" id="sName">—</div>
+    <div class="srv-addr" id="sAddr">—</div>
+  </div>
+  <div class="srv-ping unk" id="sPing">— ms</div>
+  <button class="btn-switch" id="btnSwitch">Сменить</button>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="home"><span class="tab-icon">🏠</span>Главная</div>
+  <div class="tab" data-tab="servers"><span class="tab-icon">🌐</span>Серверы</div>
+  <div class="tab" data-tab="sites"><span class="tab-icon">🔓</span>Сайты</div>
+  <div class="tab" data-tab="stats"><span class="tab-icon">📊</span>Статистика</div>
+  <div class="tab" data-tab="privacy"><span class="tab-icon">🔒</span>Приватность</div>
+</div>
+
+<!-- ══ HOME ══ -->
+<div class="pane active" id="pane-home">
+
+  <div class="upd-badge" id="updBadge">
+    <div class="upd-dot" id="updDot"></div>
+    <div class="upd-text" id="updText">Загрузка серверов...</div>
+    <button class="btn-upd" id="btnRefresh">↻</button>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="row-ico ico-green">📶</div>
+      <div class="row-body">
+        <div class="row-title">Режим экономии трафика</div>
+        <div class="row-sub" id="subWifi">Выкл</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="togWifi"><div class="tog-track"></div></label>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-blue">🛡️</div>
+      <div class="row-body">
+        <div class="row-title">Защита приватности</div>
+        <div class="row-sub" id="subPrivacy">Выкл</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="togPrivacy"><div class="tog-track"></div></label>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-red">🚫</div>
+      <div class="row-body">
+        <div class="row-title">Блокировка рекламы и трекеров</div>
+        <div class="row-sub" id="subAd">Выкл</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="togAd"><div class="tog-track"></div></label>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-purple">🕵️</div>
+      <div class="row-body">
+        <div class="row-title">Очистка данных при выходе</div>
+        <div class="row-sub">Куки, кеш, localStorage</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="togIncognito"><div class="tog-track"></div></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="row-ico ico-teal">🎬</div>
+      <div class="row-body">
+        <div class="row-title">YouTube</div>
+        <div class="row-sub">Разблокирован через СБП</div>
+      </div>
+      <span class="row-action green">✓ Активен</span>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-blue">✈️</div>
+      <div class="row-body">
+        <div class="row-title">Telegram</div>
+        <div class="row-sub">Разблокирован через СБП</div>
+      </div>
+      <span class="row-action green">✓ Активен</span>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-green">💬</div>
+      <div class="row-body">
+        <div class="row-title">WhatsApp</div>
+        <div class="row-sub">Разблокирован через СБП</div>
+      </div>
+      <span class="row-action green">✓ Активен</span>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-orange">🤖</div>
+      <div class="row-body">
+        <div class="row-title">Claude AI / ChatGPT</div>
+        <div class="row-sub">Разблокирован через СБП</div>
+      </div>
+      <span class="row-action green">✓ Активен</span>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-gray">🐦</div>
+      <div class="row-body">
+        <div class="row-title">Twitter / X · Instagram · Discord</div>
+        <div class="row-sub">Разблокированы через СБП</div>
+      </div>
+      <span class="row-action green">✓ Активны</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ SERVERS ══ -->
+<div class="pane" id="pane-servers">
+  <div class="card-title">Доступные серверы</div>
+  <div class="srv-list" id="srvList">
+    <div class="empty"><div class="spin"></div></div>
+  </div>
+</div>
+
+<!-- ══ SITES ══ -->
+<div class="pane" id="pane-sites">
+  <div class="card-title">Встроенные сайты для обхода (<span id="builtinCount">0</span>)</div>
+  <div class="dom-list" id="builtinList"></div>
+
+  <div class="card-title" style="margin-top:12px">Мои сайты</div>
+  <div class="dom-input-row">
+    <input class="dom-input" id="domInput" type="text" placeholder="example.com">
+    <button class="btn-add" id="btnAddDom">+ Добавить</button>
+  </div>
+  <div class="dom-list" id="customList">
+    <div class="empty">Нет добавленных сайтов</div>
+  </div>
+</div>
+
+<!-- ══ STATS ══ -->
+<div class="pane" id="pane-stats">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-val green" id="stSaved">0</div>
+      <div class="stat-lbl" id="stSavedU">КБ сэкономлено</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val blue" id="stBlocked">0</div>
+      <div class="stat-lbl">трекеров заблок.</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val orange" id="stSrv">0</div>
+      <div class="stat-lbl">серверов в пуле</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val purple" id="stSites">0</div>
+      <div class="stat-lbl">сайтов обходим</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Детали</div>
+    <div class="info-row"><span class="info-lbl">Статус СБП</span><span class="info-val" id="dtStatus">—</span></div>
+    <div class="info-row"><span class="info-lbl">Сервер</span><span class="info-val blue" id="dtSrv">—</span></div>
+    <div class="info-row"><span class="info-lbl">Страна</span><span class="info-val" id="dtCountry">—</span></div>
+    <div class="info-row"><span class="info-lbl">Режим</span><span class="info-val">Selective Bypass (PAC)</span></div>
+    <div class="info-row"><span class="info-lbl">Обновлено</span><span class="info-val" id="dtUpd">—</span></div>
+  </div>
+</div>
+
+<!-- ══ PRIVACY ══ -->
+<div class="pane" id="pane-privacy">
+  <div class="card">
+    <div class="row">
+      <div class="row-ico ico-blue">🚫</div>
+      <div class="row-body">
+        <div class="row-title">Блокировка трекеров</div>
+        <div class="row-sub">30 правил · Google, Яндекс, Facebook...</div>
+      </div>
+      <span class="row-action green">Активна</span>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-orange">🍪</div>
+      <div class="row-body">
+        <div class="row-title">Авто-очистка куки при выходе</div>
+        <div class="row-sub">При отключении СБП</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="togCookie"><div class="tog-track"></div></label>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-red">🛡️</div>
+      <div class="row-body">
+        <div class="row-title">Защита от утечки DNS</div>
+        <div class="row-sub">DoH через Cloudflare/Google</div>
+      </div>
+      <span class="row-action green">Активна</span>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-purple">🌐</div>
+      <div class="row-body">
+        <div class="row-title">Только заблокированные через прокси</div>
+        <div class="row-sub">Остальной трафик — напрямую</div>
+      </div>
+      <span class="row-action green">PAC</span>
+    </div>
+    <div class="row">
+      <div class="row-ico ico-teal">🗑️</div>
+      <div class="row-body">
+        <div class="row-title">Очистить данные прямо сейчас</div>
+        <div class="row-sub">Куки, кеш, localStorage, IndexedDB</div>
+      </div>
+      <span class="row-action red" id="btnClearNow">Очистить</span>
+    </div>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
